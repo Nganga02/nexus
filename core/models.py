@@ -15,7 +15,7 @@ GUEST = "guest"
 HOST = "host"
 PENDING = "pending"
 CONFIRMED = "confirmed"
-CANCELLED = "cancelled"
+CANCELED = "canceled"
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     #Required fields
@@ -72,7 +72,7 @@ class Booking(models.Model):
         on_delete=models.CASCADE, 
         related_name="bookings"
     )
-    guest = models.ForeignKey(
+    guests = models.ManyToManyField(
         User, 
         on_delete=models.CASCADE, 
         related_name="bookings"
@@ -81,7 +81,7 @@ class Booking(models.Model):
     STATUS_CHOICES = [
         (PENDING, 'Pending'),
         (CONFIRMED, 'Confirmed'),
-        (CANCELLED, 'Canceled'),
+        (CANCELED, 'Canceled'),
     ]
     check_in = models.DateField()
     check_out = models.DateField()
@@ -137,3 +137,18 @@ class Booking(models.Model):
 
     def __str__(self):
         return f"Booking {self.id} price: {self.total_price} status: {self.status}"
+    
+class Payment(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    booking = models.OneToOneField(
+        Booking, 
+        on_delete=models.CASCADE, 
+        related_name="payment"
+    )
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    payment_date = models.DateTimeField(auto_now_add=True)
+    payment_method = models.CharField(max_length=100)
+
+    def __str__(self):
+        return f"Payment {self.id} for Booking {self.booking.id} amount: {self.amount}"
+    
