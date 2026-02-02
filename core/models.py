@@ -140,6 +140,11 @@ class Booking(models.Model):
     
 class Payment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    payer = models.ForeignKey(
+        CustomUser, 
+        on_delete=models.CASCADE, 
+        related_name="payments"
+    )
     booking = models.OneToOneField(
         Booking, 
         on_delete=models.CASCADE, 
