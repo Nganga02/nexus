@@ -1,3 +1,12 @@
+"""
+Handles the validation and transformation of the data for the models
+defined in core/models.py, ensuring that the data is in the correct
+format and adheres to the business rules before it is saved to the 
+database or sent in API responses.
+"""
+
+
+
 from serializers import ModelSerializer
 import serializers
 from serializers import ValidationError
@@ -150,7 +159,15 @@ class PropertyDetailSerializer(ModelSerializer):
     owner = CustomUserSummarySerializer(read_only=True)
     class Meta:
         model = Property
-        fields = '__all__'
+        fields = [
+            'id',
+            'owner',
+            'name',
+            'description',
+            'location',
+            'price_per_night',
+            'created_at',
+        ]
     
 
 """

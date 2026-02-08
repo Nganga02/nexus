@@ -1,5 +1,11 @@
+"""
+Models carry the business logic of the applicaiton,
+they define the data structure and relationships between different entities.
+Has the core implementation of the applications logic and rules on the data
+retireved and saved.
+"""
+
 import uuid
-import re
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth import get_user_model
@@ -67,7 +73,6 @@ class Property(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     
     #TODO: adding type
-
 
     def is_available(self, start_date, end_date):  
         """Check if property is available for the given date range"""
@@ -162,10 +167,6 @@ class Booking(models.Model):
         self.save(update_fields=['status'])
         return self.balance_due
 
-        
-
-    def __str__(self):
-        return f"Booking {self.id} price: {self.total_price} status: {self.status}"
     
     class Meta:
         ordering = ["-created_at"]
@@ -175,6 +176,9 @@ class Booking(models.Model):
                 name="check_out_after_check_in"
             )
         ]
+    
+    def __str__(self):
+        return f"Booking {self.id} price: {self.total_price} status: {self.status}"
 
 
     
