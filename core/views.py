@@ -1,60 +1,107 @@
-from django.shortcuts import render
 from rest_framework import viewsets
-from django.contrib.auth import get_user_model
-from .models import (
-    Property,
-    Booking,
-    Payment
-)
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from django.db.models import Prefetch
 
+from django.contrib.auth import get_user_model
+
+from .models import Property, Booking, Payment
 from .serializers import (
+    CustomUserListSerializer,
+    CustomUserCreateSerializer,
+    CustomUserDetailSerializer,
+    CustomUserUpdateSerializer,
+
     PropertyListSerializer,
     PropertyDetailSerializer,
+
     BookingListSerializer,
     BookingDetailSerializer,
-    CustomUserListSerializer,
-    CustomUserDetailSerializer,
+
+    PaymentCreateSerializer,
     PaymentDetailSerializer,
+)
+
+from .permissions import (
+    UsersPermission,
+    PropertyPermissions,
+    BookingPermissions,
+    IsGuestForPayment,
 )
 
 CustomUser = get_user_model()
 
-class CustomUserViewSet(viewsets.ModelViewSet):
-    queryset = CustomUser.objects.all()
 
-    def list(self, request, *args, **kwargs):
-        self.serializer_class = CustomUserListSerializer
-        return super().list(request, *args, **kwargs)
-    
-    def retrieve(self, request, *args, **kwargs):
-        self.serializer_class = CustomUserDetailSerializer
-        return super().retrieve(request, *args, **kwargs)   
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = CustomUser.objects.all()
+    permission_classes = [UsersPermission]
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return CustomUserCreateSerializer
+        if self.action in ['update', 'partial_update']:
+            return CustomUserUpdateSerializer
+        if self.action == 'list':
+            return CustomUserListSerializer
+        return CustomUserDetailSerializer
+
 
 class PropertyViewSet(viewsets.ModelViewSet):
-    queryset = Property.objects.all()
+    permission_classes = [PropertyPermissions]
 
-    def list(self, request, *args, **kwargs):
-        self.serializer_class = PropertyListSerializer
-        return super().list(request, *args, **kwargs)
-    
-    def retrieve(self, request, *args, **kwargs):
-        self.serializer_class = PropertyDetailSerializer
-        return super().retrieve(request, *args, **kwargs)
+    def get_queryset(self):
+        return Property.objects.select_related('owner')
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return PropertyListSerializer
+        return PropertyDetailSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
 
 class BookingViewSet(viewsets.ModelViewSet):
-    queryset = Booking.objects.all()
+    permission_classes = [BookingPermissions]
 
-    def list(self, request, *args, **kwargs):
-        self.serializer_class = BookingListSerializer
-        return super().list(request, *args, **kwargs)
+    def get_queryset(self):
+        user = self.request.user
+
+        qs = Booking.objects.select_related(
+            'property',
+            'property__owner'
+        ).prefetch_related('guests')
+
+        if user.role == 'admin':
+            return qs
+
+        if user.role == 'host':
+            return qs.filter(property__owner=user)
+
+        return qs.filter(guests=user)
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return BookingListSerializer
+        return BookingDetailSerializer
     
-    def retrieve(self, request, *args, **kwargs):
-        self.serializer_class = BookingDetailSerializer
-        return super().retrieve(request, *args, **kwargs)
-    
+
 class PaymentViewSet(viewsets.ModelViewSet):
-    queryset = Payment.objects.all()
+    permission_classes = [IsAuthenticated, IsGuestForPayment]
 
-    def retrieve(self, request, *args, **kwargs):
-        self.serializer_class = PaymentDetailSerializer
-        return super().retrieve(request, *args, **kwargs)
+    def get_queryset(self):
+        user = self.request.user
+
+        qs = Payment.objects.select_related(
+            'booking',
+            'payer'
+        )
+
+        if user.role == 'admin':
+            return qs
+
+        return qs.filter(booking__guests=user)
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return PaymentCreateSerializer
+        return PaymentDetailSerializer

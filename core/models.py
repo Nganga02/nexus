@@ -15,8 +15,6 @@ from django.contrib.auth.models import (
 )
 from .managers import CustomUserManager
 
-User = get_user_model()
-
 ADMIN = "admin"
 GUEST = "guest"
 HOST = "host"
@@ -27,7 +25,7 @@ PROCESSING = "processing"
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     #Required fields
-    id = models.CharField(primary_key=True, editable=False)
+    id = models.CharField(primary_key=True, editable=False, unique=True, max_length=100)
     name = models.CharField(max_length=150)
     id_photo = models.ImageField(upload_to="users/photos/", blank=False, null=False)
     phone_number = models.CharField(
@@ -35,9 +33,10 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         unique=True,
         blank=False,
         null=False,
-        unique=True
         )
     password = models.CharField(max_length=128)
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
 
     #Optional fields
     email = models.EmailField(blank=True, null=True, unique=True)
@@ -52,7 +51,9 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     objects = CustomUserManager()
 
     USERNAME_FIELD = "id"
-    REQUIRED_FIELDS = ['id', 'id_photo', 'phone_number', 'name', 'password']
+    REQUIRED_FIELDS = ['id_photo', 'phone_number', 'name', 'password']
+
+    
 
     def __str__(self):
         return f"{self.name} {self.phone_number}"
@@ -96,7 +97,7 @@ class Booking(models.Model):
         related_name="bookings"
     )
     guests = models.ManyToManyField(
-        User, 
+        CustomUser, 
         related_name="bookings"
     )
 
@@ -106,7 +107,7 @@ class Booking(models.Model):
         (CONFIRMED, 'Confirmed'),
         (CANCELED, 'Canceled'),
     ]
-    status = models.CharField(maxlength=20, choices=STATUS_CHOICES, default=PENDING)
+    status = models.CharField(choices=STATUS_CHOICES, default=PENDING)
     check_in = models.DateField()
     check_out = models.DateField()
     price_per_night = models.DecimalField(max_digits=10, decimal_places=2)

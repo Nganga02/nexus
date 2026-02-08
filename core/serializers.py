@@ -5,17 +5,14 @@ format and adheres to the business rules before it is saved to the
 database or sent in API responses.
 """
 
-
-
-from serializers import ModelSerializer
-import serializers
-from serializers import ValidationError
+from rest_framework.serializers import ModelSerializer, ValidationError
+from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DValidationError
 from django.db import transaction, IntegrityError
 from datetime import date
-from models import (
+from .models import (
     Property,
     Booking,
     Payment,
