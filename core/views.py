@@ -1,8 +1,13 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from django.db.models import Prefetch
+from rest_framework.views import APIView
+from rest_framework.response import Response
+
+from django.http import HttpResponse
 
 from django.contrib.auth import get_user_model
+
+from .service import MpesaService
 
 from .models import Property, Booking, Payment
 from .serializers import (
@@ -105,3 +110,33 @@ class PaymentViewSet(viewsets.ModelViewSet):
         if self.action == 'create':
             return PaymentCreateSerializer
         return PaymentDetailSerializer
+    
+    def create(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        payment = serializer.save()
+
+        mpesa_service = MpesaService(
+            phone_number=payment.payer.phone_number,
+            amount=payment.amount
+            )
+
+        mpesa_service.initiate_stk_push()
+
+
+
+
+
+
+# def index(request):
+#     cl = MpesaClient()
+#     # Use a Safaricom phone number that you have access to, for you to be able to view the prompt.
+#     phone_number = '0746011197'
+#     amount = 1
+#     account_reference = 'nexus'
+#     transaction_desc = 'Description'
+#     callback_url = 'https://api.darajambili.com/express-payment'
+#     response = cl.stk_push(phone_number, amount, account_reference, transaction_desc, callback_url)
+#     print(response.response_code)
+#     return HttpResponse(response)

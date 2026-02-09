@@ -52,6 +52,7 @@ class CustomUserDetailSerializer(ModelSerializer):
     
 
 class CustomUserCreateSerializer(ModelSerializer):
+    id=serializers.CharField(required=True)
     class Meta:
         model = CustomUser
         fields = [
@@ -370,7 +371,7 @@ We only allow creating payments ans not updating to maintain payment integrity
 """
 class PaymentCreateSerializer(ModelSerializer):
     booking = serializers.PrimaryKeyRelatedField(
-        queryset=Booking.objects.filter(status='processing')
+        queryset=Booking.objects.filter(status=['pending','processing'])
     )
     payer = serializers.PrimaryKeyRelatedField(
         queryset=CustomUser.objects.all()
