@@ -51,7 +51,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     objects = CustomUserManager()
 
     USERNAME_FIELD = "id"
-    REQUIRED_FIELDS = ['id_photo', 'phone_number', 'name', 'password']
+    REQUIRED_FIELDS = ['id_photo', 'phone_number', 'name', 'email', 'password']
 
     
 
@@ -152,7 +152,7 @@ class Booking(models.Model):
     
     def can_cancel(self):
         """Check if booking can be canceled"""
-        return self.status in ['pending', 'confirmed'] and self.check_in > timezone.now().date()
+        return self.status in ['pending'] and self.check_in > timezone.now().date()
 
     def calculate_total_price(self):
         delta = self.check_out - self.check_in
