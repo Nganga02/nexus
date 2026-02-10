@@ -7,7 +7,7 @@ from django.http import HttpResponse
 
 from django.contrib.auth import get_user_model
 
-from .service import MpesaService
+from .service import MpesaService, MpesaClient
 
 from .models import Property, Booking, Payment
 from .serializers import (
@@ -129,14 +129,21 @@ class PaymentViewSet(viewsets.ModelViewSet):
 
 
 
-# def index(request):
-#     cl = MpesaClient()
-#     # Use a Safaricom phone number that you have access to, for you to be able to view the prompt.
-#     phone_number = '0746011197'
-#     amount = 1
-#     account_reference = 'nexus'
-#     transaction_desc = 'Description'
-#     callback_url = 'https://api.darajambili.com/express-payment'
-#     response = cl.stk_push(phone_number, amount, account_reference, transaction_desc, callback_url)
-#     print(response.response_code)
-#     return HttpResponse(response)
+def index(request):
+    cl = MpesaClient()
+    # Use a Safaricom phone number that you have access to, for you to be able to view the prompt.
+    phone_number = '0746011197'
+    amount = 1
+    account_reference = 'nexus'
+    transaction_desc = 'Description'
+    callback_url = 'https://52e8-196-98-176-64.ngrok-free.app'
+    response = cl.stk_push(
+        phone_number,
+        amount,
+        account_reference,
+        transaction_desc,
+        callback_url
+    )
+    data=cl.parse_stk_result(response)#used for callback 
+    print(data)
+    return HttpResponse(response)
