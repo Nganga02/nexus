@@ -15,15 +15,13 @@ from django.contrib.auth.models import (
 )
 from .managers import CustomUserManager
 
-ADMIN = "admin"
-GUEST = "guest"
-HOST = "host"
-PENDING = "pending"
-CONFIRMED = "confirmed"
-CANCELED = "canceled"
-PROCESSING = "processing"
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
+
+    class Roles(models.TextChoices):
+        ADMIN = "admin", "Admin"
+        GUEST = "guest", "Guest"
+        HOST = "host", "Host"
     #Required fields
     id = models.CharField(primary_key=True, editable=False, unique=True, max_length=100)
     name = models.CharField(max_length=150)
@@ -41,12 +39,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     #Optional fields
     email = models.EmailField(blank=True, null=True, unique=True)
     credit_score = models.IntegerField(default=0)
-    ROLE_CHOICES = (
-        (ADMIN, "Admin"),
-        (GUEST, "Guest"),
-        (HOST, "Host"),
-    )
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default=GUEST)
+    role = models.CharField(max_length=20, choices=Roles.choices, default=Roles.GUEST)
     date_joined = models.DateTimeField(auto_now_add=True)
     objects = CustomUserManager()
 
@@ -90,6 +83,11 @@ class Property(models.Model):
 
 
 class Booking(models.Model):
+    class BookingStatus(models.TextChoices):
+        PENDING = 'pending', 'Pending'
+        PROCESSING = 'processing', 'Processing'
+        CONFIRMED = 'confirmed', 'Confirmed'
+        CANCELED = 'canceled', 'Canceled'
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     property = models.ForeignKey(
         Property, 
@@ -101,13 +99,7 @@ class Booking(models.Model):
         related_name="bookings"
     )
 
-    STATUS_CHOICES = [
-        (PENDING, 'Pending'),
-        (PROCESSING, 'Processing'),
-        (CONFIRMED, 'Confirmed'),
-        (CANCELED, 'Canceled'),
-    ]
-    status = models.CharField(choices=STATUS_CHOICES, default=PENDING)
+    status = models.CharField(choices=BookingStatus.choices, default=BookingStatus.PENDING)
     check_in = models.DateField()
     check_out = models.DateField()
     price_per_night = models.DecimalField(max_digits=10, decimal_places=2)
@@ -162,9 +154,9 @@ class Booking(models.Model):
     def calculate_balance_due(self, amount_paid):
         self.balance_due -= amount_paid
         if self.balance_due > 0:
-            self.status = PROCESSING
+            self.status = self.BookingStatus.PROCESSING
         else:
-            self.status = CONFIRMED
+            self.status = self.BookingStatus.CONFIRMED
         self.save(update_fields=['status'])
         return self.balance_due
 
@@ -184,7 +176,19 @@ class Booking(models.Model):
 
     
 class Payment(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    class Status(models.TextChoices):
+        PROCESSING = "processing", "Processing"
+        SUCCESSFUL = "successful", "Successful"
+        FAILED = "failed", "Failed"
+
+    id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False)
+    checkout_request_id = models.CharField(
+        max_length=100,
+        unique=True,
+        null=True,
+        blank=True
+    )
     payer = models.ForeignKey(
         CustomUser, 
         on_delete=models.CASCADE, 
@@ -195,9 +199,24 @@ class Payment(models.Model):
         on_delete=models.CASCADE, 
         related_name="payment"
     )
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PROCESSING,
+        db_index=True
+    )
+    mpesa_ref=models.CharField(max_length=100, blank=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, blank=False)
     payment_date = models.DateTimeField(auto_now_add=True)
     payment_method = models.CharField(max_length=100)
+
+    def get_checkout_request_id(self, response):
+        self.checkout_request_id = response.get("CheckoutRequestID")
+
+    class Meta:
+        indexes=[
+            models.Index(fields=['booking', 'payer', 'checkout_request_id'])
+        ]
 
     def __str__(self):
         return f"Payment {self.id} for Booking {self.booking.id} amount: {self.amount}"

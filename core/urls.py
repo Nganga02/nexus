@@ -7,7 +7,8 @@ from .views import (
     PropertyViewSet,
     BookingViewSet,
     PaymentViewSet,
-    index
+    MpesaCallbackView,
+    index,
 )
 
 router = DefaultRouter()
@@ -19,5 +20,6 @@ router.register(r'payments', PaymentViewSet, basename='payment')
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('pay/', index, name='pay'),
+    path('payments/pay', index, name='pay'),
+    path('payments/mpesa/callback/ ', MpesaCallbackView.as_view(), name='pay'),
 ]

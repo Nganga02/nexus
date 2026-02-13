@@ -11,7 +11,7 @@ class MpesaService:
     def initiate_stk_push(self):
         account_reference = 'nexus'
         transaction_desc='booking payment'
-        callback_url=''#TODO: add callback url
+        callback_url='https://9610-196-98-176-64.ngrok-free.app/mpesa/callback'#TODO: add callback url
         response = self.cl.stk_push(
             self, 
             self.phone_number,
@@ -22,7 +22,4 @@ class MpesaService:
             )
         return response 
         
-    async def callback_handler(self):
-        response = await self.initiate_stk_push()
-        data = self.cl.parse_stk_result(response)
-        return data
+    

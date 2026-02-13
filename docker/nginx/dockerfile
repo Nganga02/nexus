@@ -1,0 +1,6 @@
+FROM nginx:stable
+
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Optional: copy SSL certs if needed
+# COPY certs/ /etc/ssl/certs/
