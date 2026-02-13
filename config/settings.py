@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,7 +26,15 @@ SECRET_KEY = 'django-insecure-5_f5qi4_h3#y@fr^w55j$^)6$x(&5_#!=47-+6#0+7jp6*9(ku
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "0.0.0.0",
+    "127.0.0.1",
+    ".onrender.com"
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.onrender.com",
+]
 
 
 # Application definition
@@ -40,6 +49,8 @@ INSTALLED_APPS = [
     'django_filters',
     'django_daraja',
     'rest_framework',
+    'drf_spectacular',
+
 
     'core',
 ]
@@ -94,11 +105,23 @@ MPESA_SHORTCODE_TYPE = os.getenv('MPESA_SHORTCODE_TYPE')
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+#For test environment
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
+#For production
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.parse(
+        os.environ.get("DATABASE_URL"),
+        conn_max_age=600,
+        ssl_require=True,
+    )
 }
 
 
@@ -151,6 +174,7 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': "drf_spectacular.openapi.AutoSchema",
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
@@ -188,6 +212,39 @@ LOGGING = {
         },
     },
 }
+
+CELERY_BROKER_URL = "redis://127.0.0.1:6379/0"
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_BACKEND = "django-db"
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = "noreply.nexus@gmail.com"
+EMAIL_HOST_PASSWORD = ")P:?(OL>8ik,)"
+
+
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Booking & Payments API",
+    "DESCRIPTION": "API for property booking, Mpesa payments, and callbacks",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SORT_OPERATIONS": False,
+
+    "SECURITY": [{"BearerAuth": []}],
+    "SECURITY_DEFINITIONS": {
+        "BearerAuth": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT",
+        }
+    },
+}
+
 
 
 MEDIA_URL = "/media/"
