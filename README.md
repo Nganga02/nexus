@@ -12,19 +12,6 @@ This project addresses inefficiencies in traditional property booking systems by
 
 ---
 
-## 2. Problem Statement
-
-Many property booking processes are still handled manually or through loosely integrated systems, leading to:
-
-- Double booking of properties
-- Delayed or untraceable payments
-- Poor user experience
-- Lack of real-time booking confirmation
-
-There is a need for a centralized system that integrates property management with a trusted mobile payment platform.
-
----
-
 ## 3. Project Objectives
 
 ### 3.1 Main Objective
@@ -204,7 +191,7 @@ Daraja is an API that enables developers to integrate M-Pesa payment services in
 - The backend validates the response
 - Payment metadata is extracted
 - A payment's checkout request id is matched to the callback's body checkout request id 
-- Booking and payment records are updated
+- Booking and payment records are updated this includes updating balances for bookings that are shared.
 
 ---
 
